@@ -1,0 +1,26 @@
+stages:
+  clean_data:
+    cmd: python src/clean_data.py
+    deps:
+      - src/clean_data.py
+      - data/raw/dataset.csv
+    outs:
+      - data/clean/clean_dataset.csv
+
+  prepare_data:
+    cmd: python src/prepare_data.py
+    deps:
+      - src/prepare_data.py
+      - data/clean/clean_dataset.csv
+    outs:
+      - data/clean/train.csv
+      - data/clean/test.csv
+
+  train_model:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/clean/train.csv
+      - data/clean/test.csv
+    outs:
+      - models/logreg
