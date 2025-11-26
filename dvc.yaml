@@ -1,26 +1,26 @@
 stages:
   clean_data:
-    cmd: python src/clean_data.py
+    cmd: python src/clean_data.py data/raw/irag.csv data/clean/irag_clean.csv
     deps:
       - src/clean_data.py
-      - data/raw/dataset.csv
+      - data/raw/irag.csv
     outs:
-      - data/clean/clean_dataset.csv
+      - data/clean/irag_clean.csv
 
   prepare_data:
-    cmd: python src/prepare_data.py
+    cmd: python src/prepare_data.py data/clean/irag_clean.csv data/clean/train.csv data/clean/test.csv
     deps:
       - src/prepare_data.py
-      - data/clean/clean_dataset.csv
+      - data/clean/irag_clean.csv
     outs:
       - data/clean/train.csv
       - data/clean/test.csv
 
   train_model:
-    cmd: python src/train.py
+    cmd: python src/train.py data/clean/train.csv data/clean/test.csv models/lyapunov_irag_logreg.pkl
     deps:
       - src/train.py
       - data/clean/train.csv
       - data/clean/test.csv
     outs:
-      - models/logreg
+      - models/lyapunov_irag_logreg.pkl

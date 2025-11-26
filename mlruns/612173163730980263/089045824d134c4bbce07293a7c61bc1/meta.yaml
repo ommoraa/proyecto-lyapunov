@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/oscarmauriciomoraarroyo/proyecto-lyapunov/mlruns/612173163730980263/089045824d134c4bbce07293a7c61bc1/artifacts
+end_time: 1764186871443
+entry_point_name: ''
+experiment_id: '612173163730980263'
+lifecycle_stage: active
+run_id: 089045824d134c4bbce07293a7c61bc1
+run_name: orderly-cub-92
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764186871425
+status: 4
+tags: []
+user_id: oscarmauriciomoraarroyo

@@ -1,0 +1,10 @@
+artifact_location: file:///Users/oscarmauriciomoraarroyo/proyecto-lyapunov/mlruns/612173163730980263/models/m-15c6ee910f794e52bc5f87f9326ac734/artifacts
+creation_timestamp: 1764187177436
+experiment_id: '612173163730980263'
+last_updated_timestamp: 1764187179321
+model_id: m-15c6ee910f794e52bc5f87f9326ac734
+model_type: null
+name: logreg_model
+source_run_id: 044de44e35224b539312e9f5dbe5a6e7
+status: 2
+status_message: null

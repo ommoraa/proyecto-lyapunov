@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/oscarmauriciomoraarroyo/proyecto-lyapunov/mlruns/612173163730980263/510d0b678dd44af4b4ff1da6253b9124/artifacts
+end_time: 1764187487323
+entry_point_name: ''
+experiment_id: '612173163730980263'
+lifecycle_stage: active
+run_id: 510d0b678dd44af4b4ff1da6253b9124
+run_name: kindly-lynx-943
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764187485495
+status: 3
+tags: []
+user_id: oscarmauriciomoraarroyo

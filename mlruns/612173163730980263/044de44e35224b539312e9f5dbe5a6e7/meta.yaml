@@ -1,0 +1,14 @@
+artifact_uri: file:///Users/oscarmauriciomoraarroyo/proyecto-lyapunov/mlruns/612173163730980263/044de44e35224b539312e9f5dbe5a6e7/artifacts
+end_time: 1764187179323
+entry_point_name: ''
+experiment_id: '612173163730980263'
+lifecycle_stage: active
+run_id: 044de44e35224b539312e9f5dbe5a6e7
+run_name: shivering-perch-83
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1764187177418
+status: 3
+tags: []
+user_id: oscarmauriciomoraarroyo
