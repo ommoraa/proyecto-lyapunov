@@ -1,3 +1,5 @@
 .venv/
 mlruns/
 jupyter-env/
+models/
+*.pkl
