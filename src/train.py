@@ -3,7 +3,14 @@ import sys
 import pandas as pd
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+)
 from joblib import dump
 
 import mlflow
@@ -11,8 +18,11 @@ import mlflow.sklearn
 
 
 def load_data(train_path: str, test_path: str):
-    print(f"[train] Cargando train desde {train_path}")
-    print(f"[train] Cargando test  desde {test_path}")
+    """
+    Carga los archivos CSV de entrenamiento y prueba con validación básica.
+    """
+    print(f"[train] Cargando train desde: {train_path}")
+    print(f"[train] Cargando test  desde: {test_path}")
 
     if not os.path.exists(train_path):
         print(f"[train][ERROR] No existe el archivo: {train_path}")
@@ -25,15 +35,18 @@ def load_data(train_path: str, test_path: str):
     train_df = pd.read_csv(train_path)
     test_df = pd.read_csv(test_path)
 
+    print(f"[train] Shape train: {train_df.shape}")
+    print(f"[train] Shape test : {test_df.shape}")
+
     return train_df, test_df
 
 
-def split_features_target(df: pd.DataFrame, target_col: str):
+def split_features_target(df: pd.DataFrame, target_col: str = "target"):
     """
-    Separa X (features) e y (target) a partir del nombre de la columna objetivo.
+    Separa las características (X) y la variable objetivo (y) a partir de la columna objetivo.
     """
     if target_col not in df.columns:
-        print(f"[train][ERROR] La columna objetivo '{target_col}' no existe en el DataFrame.")
+        print(f"[train][ERROR] La columna objetivo '{target_col}' no existe.")
         print(f"Columnas disponibles: {list(df.columns)}")
         sys.exit(1)
 
@@ -43,94 +56,160 @@ def split_features_target(df: pd.DataFrame, target_col: str):
     return X, y
 
 
-def train_model(train_df: pd.DataFrame, test_df: pd.DataFrame, target_col: str, model_path: str):
+def compute_metrics(model, X_test, y_test):
     """
-    Entrena un modelo de regresión logística y registra el experimento en MLflow.
+    Calcula las métricas de desempeño: accuracy, precision, recall, f1 y roc_auc (si hay predict_proba).
     """
+    y_pred = model.predict(X_test)
 
-    # Separar X e y
+    metrics = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred),
+        "recall": recall_score(y_test, y_pred),
+        "f1": f1_score(y_test, y_pred),
+    }
+
+    if hasattr(model, "predict_proba"):
+        y_proba = model.predict_proba(X_test)[:, 1]
+        metrics["roc_auc"] = roc_auc_score(y_test, y_proba)
+    else:
+        metrics["roc_auc"] = float("nan")
+
+    return metrics
+
+
+def log_run_to_mlflow(model, run_name: str, params: dict, metrics: dict):
+    """
+    Registra un experimento en MLflow (parámetros, métricas y modelo).
+    """
+    with mlflow.start_run(run_name=run_name):
+        for k, v in params.items():
+            mlflow.log_param(k, v)
+
+        for k, v in metrics.items():
+            mlflow.log_metric(k, v)
+
+        mlflow.sklearn.log_model(model, artifact_path="model")
+        print(f"[mlflow] Run '{run_name}' registrado.")
+
+
+def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
+    """
+    Entrena LogisticRegression (baseline) y RandomForest (modelo mejorado),
+    registra ambos en MLflow y devuelve el modelo con mejor F1-score.
+    """
+    target_col = "target"
+
     X_train, y_train = split_features_target(train_df, target_col)
     X_test, y_test = split_features_target(test_df, target_col)
 
-    # Hiperparámetros (modelo "champion")
-    C_value = 1.0
-    max_iter = 500
-    penalty = "l2"
-    solver = "lbfgs"
+    # ===========================
+    # 1. Modelo baseline: LogReg
+    # ===========================
+    logreg_params = {
+        "model_type": "LogisticRegression",
+        "C": 1.0,
+        "max_iter": 500,
+        "penalty": "l2",
+        "solver": "lbfgs",
+    }
 
-    # Configurar MLflow (usa carpeta local mlruns/)
+    logreg = LogisticRegression(
+        C=logreg_params["C"],
+        max_iter=logreg_params["max_iter"],
+        penalty=logreg_params["penalty"],
+        solver=logreg_params["solver"],
+    )
+
+    print("[train] Entrenando modelo baseline (Logistic Regression)...")
+    logreg.fit(X_train, y_train)
+    logreg_metrics = compute_metrics(logreg, X_test, y_test)
+
+    print("\n=== Resultados Logistic Regression (baseline) ===")
+    for k, v in logreg_metrics.items():
+        print(f"{k:10s}: {v:.4f}")
+
+    log_run_to_mlflow(logreg, "logreg_baseline", logreg_params, logreg_metrics)
+
+    # =========================================
+    # 2. Modelo mejorado: Random Forest
+    # =========================================
+    rf_params = {
+        "model_type": "RandomForestClassifier",
+        "n_estimators": 300,
+        "max_depth": None,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "random_state": 42,
+    }
+
+    rf = RandomForestClassifier(
+        n_estimators=rf_params["n_estimators"],
+        max_depth=rf_params["max_depth"],
+        min_samples_split=rf_params["min_samples_split"],
+        min_samples_leaf=rf_params["min_samples_leaf"],
+        random_state=rf_params["random_state"],
+        n_jobs=-1,
+    )
+
+    print("\n[train] Entrenando modelo mejorado (Random Forest)...")
+    rf.fit(X_train, y_train)
+    rf_metrics = compute_metrics(rf, X_test, y_test)
+
+    print("\n=== Resultados Random Forest (mejorado) ===")
+    for k, v in rf_metrics.items():
+        print(f"{k:10s}: {v:.4f}")
+
+    log_run_to_mlflow(rf, "random_forest_champion", rf_params, rf_metrics)
+
+    # ==================================================
+    # Seleccionar modelo "campeón" usando F1-score
+    # ==================================================
+    f1_logreg = logreg_metrics["f1"]
+    f1_rf = rf_metrics["f1"]
+
+    best_model = rf if f1_rf >= f1_logreg else logreg
+    best_name = "Random Forest" if best_model is rf else "Logistic Regression"
+
+    print(f"\n[train] Modelo seleccionado según F1-score: {best_name}")
+
+    return best_model
+
+
+def main(train_path: str, test_path: str, model_output_path: str):
+    """
+    Función principal para entrenar el modelo y guardar el artefacto final.
+    """
+    # Configurar MLflow (tracking local en la carpeta del proyecto)
     mlflow.set_tracking_uri("mlruns")
     mlflow.set_experiment("IRAG_Stability_Analyzer")
 
-    print("[train] Iniciando run en MLflow...")
-
-    with mlflow.start_run(run_name="logreg_champion"):
-
-        # Log de hiperparámetros
-        mlflow.log_param("model_type", "LogisticRegression")
-        mlflow.log_param("C", C_value)
-        mlflow.log_param("max_iter", max_iter)
-        mlflow.log_param("penalty", penalty)
-        mlflow.log_param("solver", solver)
-        mlflow.log_param("n_features", X_train.shape[1])
-
-        # Definir y entrenar el modelo
-        model = LogisticRegression(
-            C=C_value,
-            max_iter=max_iter,
-            penalty=penalty,
-            solver=solver,
-        )
-        model.fit(X_train, y_train)
-
-        # Predicciones
-        y_pred = model.predict(X_test)
-
-        # Métricas
-        acc = accuracy_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred, zero_division=0)
-        prec = precision_score(y_test, y_pred, zero_division=0)
-        rec = recall_score(y_test, y_pred, zero_division=0)
-
-        print(f"[train] accuracy = {acc:.4f}")
-        print(f"[train] f1       = {f1:.4f}")
-        print(f"[train] precision= {prec:.4f}")
-        print(f"[train] recall   = {rec:.4f}")
-
-        # Log de métricas
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("f1", f1)
-        mlflow.log_metric("precision", prec)
-        mlflow.log_metric("recall", rec)
-
-        # Guardar modelo en MLflow
-        mlflow.sklearn.log_model(model, artifact_path="model")
-
-        # Guardar modelo en disco (para Streamlit)
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        dump(model, model_path)
-        print(f"[train] Modelo guardado en {model_path}")
-
-    print("[train] Run de MLflow terminado.")
-
-
-def main():
-    # --- Leer argumentos que vienen desde dvc.yaml ---
-    # cmd: python src/train.py data/clean/train.csv data/clean/test.csv models/lyapunov_irag_logreg.pkl
-    if len(sys.argv) != 4:
-        print("[train][ERROR] Uso: python src/train.py <train_path> <test_path> <model_path>")
-        sys.exit(1)
-
-    train_path = sys.argv[1]
-    test_path = sys.argv[2]
-    model_path = sys.argv[3]
-
-    # ⚠️ IMPORTANTE: La columna objetivo real en tu dataset se llama "target"
-    TARGET_COLUMN = "target"
-
+    # Cargar datos
     train_df, test_df = load_data(train_path, test_path)
-    train_model(train_df, test_df, TARGET_COLUMN, model_path)
+
+    # Entrenar modelos y obtener el modelo seleccionado
+    best_model = train_and_log_models(train_df, test_df)
+
+    # Guardar modelo en una ruta fija (para la aplicación) y en la ruta parametrizada
+    os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
+    dump(best_model, "models/lyapunov_irag_model.pkl")
+    dump(best_model, model_output_path)
+    print(f"[train] Modelo final guardado en: {model_output_path}")
 
 
 if __name__ == "__main__":
-    main()
+    """
+    Uso esperado (por ejemplo, desde DVC):
+        python src/train.py data/clean/train.csv data/clean/test.csv models/lyapunov_irag_model.pkl
+    """
+    if len(sys.argv) != 4:
+        print(
+            "Uso: python src/train.py <train_path> <test_path> <model_output_path>",
+        )
+        sys.exit(1)
+
+    train_path_arg = sys.argv[1]
+    test_path_arg = sys.argv[2]
+    model_output_path_arg = sys.argv[3]
+
+    main(train_path_arg, test_path_arg, model_output_path_arg)

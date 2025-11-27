@@ -1,188 +1,180 @@
-import streamlit as st
+import joblib
+from pathlib import Path
 import pandas as pd
-import numpy as np
-import pickle
-import os
-import datetime
-import plotly.express as px
+import streamlit as st
 
-
-# ---------------------------------------------
-# 1. Cargar modelo actual
-# ---------------------------------------------
-MODEL_PATH = "models/lyapunov_irag_logreg.pkl"
-
-@st.cache_data
-def load_model():
-    if not os.path.exists(MODEL_PATH):
-        return None
-    with open(MODEL_PATH, "rb") as f:
-        return pickle.load(f)
-
-model = load_model()
-
-
-# ---------------------------------------------
-# 2. Cargar datos limpios para gráficas
-# ---------------------------------------------
-DATA_PATH = "data/clean/irag_clean.csv"
-
-@st.cache_data
-def load_data():
-    if os.path.exists(DATA_PATH):
-        return pd.read_csv(DATA_PATH)
-    return None
-
-df = load_data()
-
-
-
-# ---------------------------------------------
-# App layout
-# ---------------------------------------------
+# =========================
+# CONFIGURACIÓN BÁSICA
+# =========================
 st.set_page_config(
-    page_title="IRAG Stability Analyzer",
+    page_title="IRAG – Modelo de Predicción",
+    page_icon=None,
     layout="wide",
-    initial_sidebar_state="expanded"
 )
 
-st.title("📈 IRAG Stability Analyzer")
-st.write("Aplicación avanzada para análisis epidemiológico con modelos predictivos y señales tipo Lyapunov")
+st.title("IRAG – Analizador de Riesgo")
+st.markdown(
+    """
+Esta aplicación carga el modelo entrenado en el proyecto y 
+permite hacer predicciones sobre nuevos datos.
 
-
-# ======================================================
-# Sidebar
-# ======================================================
-st.sidebar.header(" Navegación ")
-pagina = st.sidebar.radio(
-    "Selecciona sección:",
-    ["🔮 Predicción IRAG", "📊 Gráficas", "📘 Explicación", "ℹ Sobre el Proyecto"]
+### Flujo de uso
+1. Carga el modelo desde `models/`.
+2. Elige si quieres usar un conjunto de datos de ejemplo (`data/clean/test.csv`) o subir tu propio archivo CSV.
+3. La aplicación calcula la predicción para cada fila (0 = bajo riesgo, 1 = alto riesgo) y muestra el resultado.
+4. Puedes descargar el archivo con las predicciones.
+"""
 )
 
 
+# =========================
+# FUNCIONES AUXILIARES
+# =========================
 
-# =================================================================
-#  PAGINA 1 - Predicción
-# =================================================================
-if pagina == "🔮 Predicción IRAG":
-    st.header("🔮 Predicción del comportamiento semanal del IRAG")
-
-    if model is None:
-        st.error("❌ Modelo no encontrado. Ejecuta `dvc repro`.")
-        st.stop()
-
-    st.subheader("✨ Ingrese los valores para predecir")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        I_t_minus_1 = st.number_input(
-            "Proporción IRAG en semana anterior (Iₜ₋₁)",
-            min_value=0.0, max_value=1.0, value=0.05
+@st.cache_resource
+def load_model(model_path: str):
+    """
+    Carga el modelo entrenado desde un archivo .pkl usando joblib.
+    """
+    path = Path(model_path)
+    if not path.exists():
+        st.error(
+            f"No se encontró el archivo del modelo en: `{path}`.\n"
+            "Verifica el nombre en la carpeta `models/` "
+            "y actualiza la constante MODEL_PATH en este archivo."
         )
-        growth_rate = st.number_input(
-            "Tasa de crecimiento (aprox. derivada discreta)",
-            min_value=-1.0, max_value=1.0, value=0.02
-        )
-        prop_hosp_irag = st.number_input(
-            "Proporción de hospitalizaciones IRAG",
-            min_value=0.0, max_value=1.0, value=0.03
-        )
+        return None
 
-    with col2:
-        prop_uci_irag = st.number_input(
-            "Proporción de UCI IRAG",
-            min_value=0.0, max_value=1.0, value=0.01
+    model = joblib.load(path)
+    return model
+
+
+def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aplica transformaciones mínimas coherentes con las utilizadas en el entrenamiento.
+    """
+    df = df.copy()
+    if "target" in df.columns:
+        df = df.drop(columns=["target"])
+
+    # Si en train.py definiste un subconjunto de columnas (FEATURES),
+    # este filtrado debe replicarse aquí.
+    return df
+
+
+def make_predictions(model, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ejecuta el modelo sobre el DataFrame y añade:
+    - prediccion
+    - probabilidad (si está disponible)
+    """
+    features = prepare_features(df)
+
+    y_pred = model.predict(features)
+
+    result = df.copy()
+    result["prediccion"] = y_pred
+
+    if hasattr(model, "predict_proba"):
+        result["probabilidad"] = model.predict_proba(features)[:, 1]
+
+    return result
+
+
+# =========================
+# CARGA DEL MODELO
+# =========================
+
+MODEL_PATH = "models/lyapunov_irag_model.pkl"
+
+st.sidebar.header("Configuración")
+st.sidebar.markdown("Ruta del modelo que se cargará:")
+st.sidebar.code(MODEL_PATH, language="bash")
+
+model = load_model(MODEL_PATH)
+
+if model is None:
+    st.stop()
+
+st.success("Modelo cargado correctamente.")
+
+
+# =========================
+# SELECCIÓN DE FUENTE DE DATOS
+# =========================
+
+st.header("1. Cargar datos para predicción")
+
+modo = st.radio(
+    "Selecciona cómo quieres cargar los datos:",
+    (
+        "Usar dataset de ejemplo (data/clean/test.csv)",
+        "Subir un archivo CSV propio",
+    ),
+)
+
+df_input = None
+
+if modo == "Usar dataset de ejemplo (data/clean/test.csv)":
+    demo_path = Path("data/clean/test.csv")
+    if not demo_path.exists():
+        st.error(
+            "No se encontró el archivo de ejemplo en `data/clean/test.csv`.\n"
+            "Verifica que exista o usa la opción de subir tu propio CSV."
         )
-        prop_muertes_irag = st.number_input(
-            "Proporción de muertes IRAG",
-            min_value=0.0, max_value=1.0, value=0.01
-        )
-        prop_consultas_irag = st.number_input(
-            "Proporción consultas IRAG",
-            min_value=0.0, max_value=1.0, value=0.1
-        )
+    else:
+        df_input = pd.read_csv(demo_path)
+        st.info(f"Se cargó el dataset de ejemplo desde `{demo_path}`.")
+        st.dataframe(df_input.head())
+else:
+    uploaded_file = st.file_uploader(
+        "Sube un archivo CSV con la misma estructura que el conjunto de entrenamiento",
+        type=["csv"],
+    )
+    if uploaded_file is not None:
+        df_input = pd.read_csv(uploaded_file)
+        st.success("Archivo cargado correctamente. Vista previa:")
+        st.dataframe(df_input.head())
 
-    if st.button("🔍 Predecir tendencia"):
-        X = np.array([[
-            I_t_minus_1,
-            growth_rate,
-            prop_hosp_irag,
-            prop_uci_irag,
-            prop_muertes_irag,
-            prop_consultas_irag
-        ]])
 
-        pred = model.predict(X)[0]
-        prob = model.predict_proba(X)[0][1]
+# =========================
+# PREDICCIÓN
+# =========================
 
-        st.subheader("📌 Resultado de predicción")
+st.header("2. Ejecutar predicción")
 
-        if prob < 0.3:
-            st.success(f"📉 IRAG en **tendencia estable o bajando** (prob={prob:.2f})")
-        elif prob < 0.6:
-            st.warning(f"⚠️ IRAG con **variabilidad moderada** (prob={prob:.2f})")
+if df_input is not None:
+    if st.button("Calcular predicciones"):
+        try:
+            df_result = make_predictions(model, df_input)
+        except Exception as e:
+            st.error(
+                "Ocurrió un error al hacer las predicciones. "
+                "Revisa que las columnas del CSV coincidan con las utilizadas en el entrenamiento."
+            )
+            st.exception(e)
         else:
-            st.error(f"🚨 IRAG en **riesgo de crecimiento** (prob={prob:.2f})")
+            st.success("Predicciones calculadas correctamente.")
+            st.subheader("Resultado (primeras filas)")
+            st.dataframe(df_result.head())
 
-        st.metric("Probabilidad de incremento", f"{prob:.2f}")
+            # Métrica rápida: tasa de positivos
+            if "prediccion" in df_result.columns:
+                pos_rate = df_result["prediccion"].mean()
+                st.metric(
+                    "Proporción de casos positivos predichos",
+                    f"{pos_rate:.2%}",
+                )
 
-
-
-# =================================================================
-#  PAGINA 2 - Gráficas
-# =================================================================
-elif pagina == "📊 Gráficas":
-    st.header("📊 Series temporales y comportamiento del IRAG")
-
-    if df is None:
-        st.error("No se encontró el archivo limpio. Ejecute `dvc repro`.")
-        st.stop()
-
-    colA, colB = st.columns(2)
-
-    with colA:
-        fig = px.line(df, x="semana", y="TOTAL CASOS DE HOSPITALIZACIONES POR IRAG",
-                      title="Hospitalizaciones IRAG por semana")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with colB:
-        fig2 = px.line(df, x="semana", y="prop_hosp_irag",
-                       title="Proporción IRAG en hospitalizaciones")
-        st.plotly_chart(fig2, use_container_width=True)
-
-
-
-# =================================================================
-#  PAGINA 3 — Explicación
-# =================================================================
-elif pagina == "📘 Explicación":
-    st.header("📘 Interpretación epidemiológica del modelo")
-
-    st.write("""
-    ### 🔹 Relación con estabilidad y funciones tipo Lyapunov
-    - En epidemiología, observar si `prop_hosp_irag(t)` tiende a estabilizarse es equivalente 
-      a estudiar la **estabilidad de un equilibrio**.
-    - La variable `growth_rate` que usamos es una aproximación discreta de la **derivada** del sistema.
-    - Si `growth_rate → 0` y `I_t_minus_1` se estabiliza → el sistema se aproxima a un **punto estable**.
-    - Si `growth_rate > 0` persistente → indica **inestabilidad**, típico de brotes o ondas epidémicas.
-
-    ### 🔹 ¿Cómo lo usa el modelo?
-    - El modelo aprende patrones de transición semana a semana.
-    - Cuando la probabilidad de incremento es alta, estamos en un régimen **inestable**.
-    - Cuando es baja, el sistema converge a un equilibrio epidemiológico.
-
-    """)
-
-
-
-# =================================================================
-#  PAGINA 4 — Sobre el Proyecto
-# =================================================================
-elif pagina == "ℹ Sobre el Proyecto":
-    st.header("ℹ Información del Proyecto")
-    st.write("**Proyecto Final de Ciencia de Datos — Lyapunov + IRAG**")
-    st.write("**Autor:** Oscar Mauricio Mora Arroyo")
-    st.write(f"📅 Última actualización: {datetime.date.today()}")
-
-    st.write("🔗 *Enlace al repositorio GitHub (añádelo en el README cuando lo tengas listo: en unos momentos)*")
+            # Descargar CSV
+            csv_out = df_result.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="Descargar CSV con predicciones",
+                data=csv_out,
+                file_name="predicciones_irag.csv",
+                mime="text/csv",
+            )
+else:
+    st.info(
+        "Carga el dataset de ejemplo o sube tu archivo CSV para habilitar las predicciones."
+    )

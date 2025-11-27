@@ -51,10 +51,10 @@ stages:
       size: 183882
     - path: src/train.py
       hash: md5
-      md5: 3a4b670df27a7f8ea397c52dd26b463f
-      size: 4210
+      md5: 78766bc85abf9a68ce4d3545fc0776b3
+      size: 6544
     outs:
     - path: models/lyapunov_irag_logreg.pkl
       hash: md5
-      md5: bc4572ed70866463593faaab6cd1ffc2
-      size: 5055
+      md5: ee4ae772169eda6b8d4889bfa5a76c7a
+      size: 1952905
