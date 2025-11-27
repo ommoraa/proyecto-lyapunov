@@ -185,4 +185,4 @@ elif pagina == "ℹ Sobre el Proyecto":
     st.write("**Autor:** Oscar Mauricio Mora Arroyo")
     st.write(f"📅 Última actualización: {datetime.date.today()}")
 
-    st.write("🔗 *Enlace al repositorio GitHub (añádelo en el README cuando lo tengas listo)*")
+    st.write("🔗 *Enlace al repositorio GitHub (añádelo en el README cuando lo tengas listo: en unos momentos)*")
