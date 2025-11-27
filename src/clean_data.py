@@ -39,18 +39,18 @@ def clean_data(input_path: str, output_path: str) -> None:
         }
     )
 
-    print("[clean_data] Convirtiendo fechas…")
+    print("[clean_data] Convirtiendo fechas...")
     df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
 
     # ------------------------------------------------------------
-    # Columnas NO numéricas que no se usarán en la agregación
+    # Columnas no numéricas que no se usarán en la agregación
     # (se eliminan para evitar problemas al agrupar/sumar)
     # ------------------------------------------------------------
     cols_no_utiles = [
         "ORDEN",
         "UNIDAD PRIMARIA GENERADORA DEL DATO QUE NOTIFICA EL EVENTO",
         "FECHA NOTIFICACION",  # nombre original
-        "fecha",               # versión convertida; no la usamos en la suma semanal
+        "fecha",               # versión convertida; no se usa en la suma semanal
     ]
 
     df = df.drop(columns=cols_no_utiles, errors="ignore")
@@ -64,10 +64,10 @@ def clean_data(input_path: str, output_path: str) -> None:
     # Eliminar filas sin semana o año
     df = df.dropna(subset=["anio", "semana"])
 
-    print("[clean_data] Agrupando por año–semana…")
+    print("[clean_data] Agrupando por año–semana...")
 
     # ------------------------------------------------------------
-    # Seleccionar SOLO columnas numéricas y agrupar
+    # Seleccionar solo columnas numéricas y agrupar
     # (incluye anio y semana porque ya son numéricas)
     # ------------------------------------------------------------
     df_numeric = df.select_dtypes(include=["number"])
@@ -79,17 +79,12 @@ def clean_data(input_path: str, output_path: str) -> None:
     # Crear carpeta de salida si no existe
     # ------------------------------------------------------------
     out_dir = os.path.dirname(output_path)
-    if out_dir:  # evita error si output_path es solo nombre de archivo
+    if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    # Guardar
     df_weekly.to_csv(output_path, index=False)
     print(f"[clean_data] Archivo limpio guardado en: {output_path}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Uso: python clean_data.py <input_path> <output_path>")
-        sys.exit(1)
-
-    clean_data(sys.argv[1], sys.argv[2])

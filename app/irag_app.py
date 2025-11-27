@@ -8,20 +8,20 @@ import streamlit as st
 # =========================
 st.set_page_config(
     page_title="IRAG – Modelo de Predicción",
-    page_icon="🩺",
+    page_icon=None,
     layout="wide",
 )
 
-st.title("🩺 IRAG – Analizador de Riesgo")
+st.title("IRAG – Analizador de Riesgo")
 st.markdown(
     """
-Esta aplicación carga el **modelo campeón** entrenado en el proyecto Lyapunov y 
+Esta aplicación carga el modelo entrenado en el proyecto y 
 permite hacer predicciones sobre nuevos datos.
 
-### **Flujo de uso**
+### Flujo de uso
 1. Carga el modelo desde `models/`.
-2. Elige si quieres usar un dataset de ejemplo (`data/clean/test.csv`) o subir tu propio CSV.
-3. La app calcula la predicción para cada fila (0 = bajo riesgo, 1 = alto riesgo) y muestra el resultado.
+2. Elige si quieres usar un conjunto de datos de ejemplo (`data/clean/test.csv`) o subir tu propio archivo CSV.
+3. La aplicación calcula la predicción para cada fila (0 = bajo riesgo, 1 = alto riesgo) y muestra el resultado.
 4. Puedes descargar el archivo con las predicciones.
 """
 )
@@ -39,27 +39,26 @@ def load_model(model_path: str):
     path = Path(model_path)
     if not path.exists():
         st.error(
-            f"No se encontró el archivo del modelo en: `{path}`\n\n"
+            f"No se encontró el archivo del modelo en: `{path}`.\n"
             "Verifica el nombre en la carpeta `models/` "
-            "y actualiza la constante MODEL_PATH en `irag_app.py`."
+            "y actualiza la constante MODEL_PATH en este archivo."
         )
         return None
 
-    # Cargar el modelo con joblib (NO pickle)
     model = joblib.load(path)
     return model
 
 
 def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Aplica transformaciones mínimas iguales a las del entrenamiento.
+    Aplica transformaciones mínimas coherentes con las utilizadas en el entrenamiento.
     """
     df = df.copy()
     if "target" in df.columns:
         df = df.drop(columns=["target"])
 
-    # Si en train.py usaste FEATURES = [...], aquí debes replicarlo.
-    # Por ahora dejamos todas las columnas.
+    # Si en train.py definiste un subconjunto de columnas (FEATURES),
+    # este filtrado debe replicarse aquí.
     return df
 
 
@@ -88,7 +87,7 @@ def make_predictions(model, df: pd.DataFrame) -> pd.DataFrame:
 
 MODEL_PATH = "models/lyapunov_irag_model.pkl"
 
-st.sidebar.header("⚙️ Configuración")
+st.sidebar.header("Configuración")
 st.sidebar.markdown("Ruta del modelo que se cargará:")
 st.sidebar.code(MODEL_PATH, language="bash")
 
@@ -97,14 +96,14 @@ model = load_model(MODEL_PATH)
 if model is None:
     st.stop()
 
-st.success("✅ Modelo cargado correctamente.")
+st.success("Modelo cargado correctamente.")
 
 
 # =========================
 # SELECCIÓN DE FUENTE DE DATOS
 # =========================
 
-st.header("📥 1. Cargar datos para predicción")
+st.header("1. Cargar datos para predicción")
 
 modo = st.radio(
     "Selecciona cómo quieres cargar los datos:",
@@ -120,7 +119,7 @@ if modo == "Usar dataset de ejemplo (data/clean/test.csv)":
     demo_path = Path("data/clean/test.csv")
     if not demo_path.exists():
         st.error(
-            "No se encontró el archivo de ejemplo en `data/clean/test.csv`.\n\n"
+            "No se encontró el archivo de ejemplo en `data/clean/test.csv`.\n"
             "Verifica que exista o usa la opción de subir tu propio CSV."
         )
     else:
@@ -142,7 +141,7 @@ else:
 # PREDICCIÓN
 # =========================
 
-st.header("🔮 2. Ejecutar predicción")
+st.header("2. Ejecutar predicción")
 
 if df_input is not None:
     if st.button("Calcular predicciones"):
@@ -155,7 +154,7 @@ if df_input is not None:
             )
             st.exception(e)
         else:
-            st.success("✅ Predicciones calculadas correctamente.")
+            st.success("Predicciones calculadas correctamente.")
             st.subheader("Resultado (primeras filas)")
             st.dataframe(df_result.head())
 
@@ -170,10 +169,12 @@ if df_input is not None:
             # Descargar CSV
             csv_out = df_result.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="⬇️ Descargar CSV con predicciones",
+                label="Descargar CSV con predicciones",
                 data=csv_out,
                 file_name="predicciones_irag.csv",
                 mime="text/csv",
             )
 else:
-    st.info("Carga un dataset de ejemplo o sube tu archivo CSV para habilitar las predicciones.")
+    st.info(
+        "Carga el dataset de ejemplo o sube tu archivo CSV para habilitar las predicciones."
+    )
