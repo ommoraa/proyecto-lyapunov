@@ -7,11 +7,12 @@ def clean_data(input_path: str, output_path: str) -> None:
     """
     Limpia y agrega la base de IRAG a nivel semana–año.
 
-    - Valida que el archivo exista.
+    Pasos principales:
+    - Valida que el archivo de entrada exista.
     - Renombra columnas clave (fecha, semana, año).
-    - Convierte la fecha a datetime (por si se requiere después).
+    - Convierte la fecha a datetime.
     - Elimina columnas no numéricas que no se usan en la agregación.
-    - Convierte semana y año a numéricos.
+    - Convierte semana y año a tipo numérico.
     - Elimina filas sin semana o año.
     - Agrupa por (anio, semana) sumando únicamente columnas numéricas.
     - Guarda el resultado en output_path.
@@ -39,11 +40,11 @@ def clean_data(input_path: str, output_path: str) -> None:
         }
     )
 
-    print("[clean_data] Convirtiendo fechas...")
+    print("[clean_data] Convirtiendo fechas…")
     df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
 
     # ------------------------------------------------------------
-    # Columnas no numéricas que no se usarán en la agregación
+    # Columnas NO numéricas que no se usarán en la agregación
     # (se eliminan para evitar problemas al agrupar/sumar)
     # ------------------------------------------------------------
     cols_no_utiles = [
@@ -64,10 +65,10 @@ def clean_data(input_path: str, output_path: str) -> None:
     # Eliminar filas sin semana o año
     df = df.dropna(subset=["anio", "semana"])
 
-    print("[clean_data] Agrupando por año–semana...")
+    print("[clean_data] Agrupando por año–semana…")
 
     # ------------------------------------------------------------
-    # Seleccionar solo columnas numéricas y agrupar
+    # Seleccionar SOLO columnas numéricas y agrupar
     # (incluye anio y semana porque ya son numéricas)
     # ------------------------------------------------------------
     df_numeric = df.select_dtypes(include=["number"])
@@ -82,9 +83,17 @@ def clean_data(input_path: str, output_path: str) -> None:
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
+    # Guardar archivo limpio
     df_weekly.to_csv(output_path, index=False)
     print(f"[clean_data] Archivo limpio guardado en: {output_path}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
+        print("Uso: python src/clean_data.py <input_path> <output_path>")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    clean_data(input_path, output_path)

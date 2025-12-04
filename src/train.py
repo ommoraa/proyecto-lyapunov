@@ -64,14 +64,18 @@ def compute_metrics(model, X_test, y_test):
 
     metrics = {
         "accuracy": accuracy_score(y_test, y_pred),
-        "precision": precision_score(y_test, y_pred),
-        "recall": recall_score(y_test, y_pred),
-        "f1": f1_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1": f1_score(y_test, y_pred, zero_division=0),
     }
 
     if hasattr(model, "predict_proba"):
         y_proba = model.predict_proba(X_test)[:, 1]
-        metrics["roc_auc"] = roc_auc_score(y_test, y_proba)
+        try:
+            metrics["roc_auc"] = roc_auc_score(y_test, y_proba)
+        except ValueError:
+            # Por si en el conjunto de test solo hay una clase
+            metrics["roc_auc"] = float("nan")
     else:
         metrics["roc_auc"] = float("nan")
 
@@ -141,6 +145,7 @@ def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
         "min_samples_split": 2,
         "min_samples_leaf": 1,
         "random_state": 42,
+        "n_jobs": -1,
     }
 
     rf = RandomForestClassifier(
@@ -149,7 +154,7 @@ def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
         min_samples_split=rf_params["min_samples_split"],
         min_samples_leaf=rf_params["min_samples_leaf"],
         random_state=rf_params["random_state"],
-        n_jobs=-1,
+        n_jobs=rf_params["n_jobs"],
     )
 
     print("\n[train] Entrenando modelo mejorado (Random Forest)...")
@@ -181,7 +186,8 @@ def main(train_path: str, test_path: str, model_output_path: str):
     Función principal para entrenar el modelo y guardar el artefacto final.
     """
     # Configurar MLflow (tracking local en la carpeta del proyecto)
-    mlflow.set_tracking_uri("mlruns")
+    # Si prefieres otra ruta, puedes ajustar el path.
+    mlflow.set_tracking_uri("file:mlruns")
     mlflow.set_experiment("IRAG_Stability_Analyzer")
 
     # Cargar datos
@@ -192,8 +198,12 @@ def main(train_path: str, test_path: str, model_output_path: str):
 
     # Guardar modelo en una ruta fija (para la aplicación) y en la ruta parametrizada
     os.makedirs(os.path.dirname(model_output_path), exist_ok=True)
-    dump(best_model, "models/lyapunov_irag_model.pkl")
+    fixed_model_path = "models/lyapunov_irag_model.pkl"
+
+    dump(best_model, fixed_model_path)
     dump(best_model, model_output_path)
+
+    print(f"[train] Modelo final guardado en: {fixed_model_path}")
     print(f"[train] Modelo final guardado en: {model_output_path}")
 
 
