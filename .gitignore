@@ -1,5 +1,22 @@
+# Entornos y cachés
 .venv/
-mlruns/
 jupyter-env/
-models/
+__pycache__/
+
+# Experimentos de MLflow
+mlruns/
+
+# Ignorar todos los modelos excepto el modelo final
+models/*
+!models/lyapunov_irag_model.pkl
+
+# Ignorar todos los .pkl excepto el modelo final
 *.pkl
+!models/lyapunov_irag_model.pkl
+
+# Ignorar data por defecto
+data/*
+
+# Pero NO ignorar clean/ ni test.csv
+!data/clean/
+!data/clean/test.csv
