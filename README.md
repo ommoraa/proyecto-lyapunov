@@ -52,9 +52,7 @@ El flujo completo está automatizado mediante DVC:
     Entrenamiento supervisado, registro de experimentos con MLflow, evaluación comparativa y selección del modelo con mejor desempeño.
     El modelo final se registra en la Model Registry como IRAG_Lyapunov_Champion.
 
-- Ejecución del pipeline:
-
-    dvc repro
+- Ejecución del pipeline: dvc repro
 
 ## 5. Modelos Implementados
 - Modelo Base: Logistic Regression
@@ -144,4 +142,4 @@ Autores:
 - Arsenio Hidalgo Troya
 - Oscar Mauricio Mora Arroyo
 **Asigntura Ciencia de Datos para la Investigación Científica**
-_Estudiantes del Doctorado en Ciencias Naturales y Matemáticas - UDENAR - 2025_
+**_Estudiantes del Doctorado en Ciencias Naturales y Matemáticas - UDENAR - 2025_**
