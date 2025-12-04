@@ -12,25 +12,31 @@ Se construye un pipeline completo de MLOps utilizando Git, DVC, MLflow y Streaml
 ## 3. Estructura del Repositorio
 proyecto-lyapunov/
 ├── data/
-│   ├── raw/          # Datos originales versionados con DVC
-│   ├── clean/        # Datos limpios listos para modelado
+│   ├── raw/                 # Datos originales versionados con DVC
+│   └── clean/               # Datos limpios listos para modelado
+│
 ├── notebooks/
 │   ├── 01_eda_and_data_understanding.ipynb
-│   ├── 02_model_experimentation.ipynb
+│   └── 02_model_experimentation.ipynb
+│
 ├── src/
 │   ├── clean_data.py
 │   ├── prepare_data.py
-│   ├── train.py
+│   └── train.py
+│
 ├── models/
-│   ├── lyapunov_irag_model.pkl
+│   └── lyapunov_irag_model.pkl
+│
 ├── app/
-│   ├── streamlit_app.py
+│   └── streamlit_app.py
+│
 ├── reports/
-│   ├── informe_final.pdf
+│   └── informe_final.pdf
+│
 ├── dvc.yaml
 ├── dvc.lock
 ├── requirements.txt
-├── README.md
+└── README.md
 
 ## 4. Pipeline del Proyecto
 
@@ -62,9 +68,7 @@ El flujo completo está automatizado mediante DVC:
 - Registro en MLflow
 
     Se registran automáticamente hiperparámetros, métricas, artefactos y el modelo serializado.
-    El modelo con mayor f1-score se registra bajo el nombre:
-
-    IRAG_Lyapunov_Champion
+    El modelo con mayor f1-score se registra bajo el nombre: IRAG_Lyapunov_Champion
 
 ## 6. Reproducibilidad
 - Versionamiento de datos
@@ -83,9 +87,7 @@ El flujo completo está automatizado mediante DVC:
 
 El proyecto incluye una aplicación interactiva que permite realizar predicciones y visualizar información relevante del modelo seleccionado.
 
-- Ejecución:
-
-    streamlit run app/streamlit_app.py
+- Ejecución: streamlit run app/streamlit_app.py
 
 ## 8. Consideraciones Metodológicas
 
