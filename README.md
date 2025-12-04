@@ -138,8 +138,11 @@ La implementación incluye una aplicación web construida en Streamlit, desplega
 ### Nota sobre la elaboración del proyecto
 Este proyecto fue elaborado por los autores y contó con asistencia de ChatGPT en la corrección, depuración, estandarización y adaptación del código Python, así como en la organización de notebooks, scripts, documentación técnica y estructuración del pipeline. La responsabilidad final sobre el diseño, decisiones metodológicas y contenido analítico es completamente de los autores.
 
-Autores:
-- Arsenio Hidalgo Troya
-- Oscar Mauricio Mora Arroyo
-Asigntura Ciencia de Datos para la Investigación Científica
-_Estudiantes del Doctorado en Ciencias Naturales y Matemáticas - UDENAR - 2025_
+## Autores  
+
+- Arsenio Hidalgo Troya  
+
+- Oscar Mauricio Mora Arroyo  
+  Asignatura: Ciencia de Datos para la Investigación Científica  
+  Programa: Doctorado en Ciencias Naturales y Matemáticas  
+  Universidad de Nariño (UDENAR) – 2025
