@@ -36,56 +36,56 @@ proyecto-lyapunov/
 
 El flujo completo está automatizado mediante DVC:
 
-clean_data
-Procesamiento inicial, validación, tratamiento de valores faltantes y depuración.
+- clean_data
+    Procesamiento inicial, validación, tratamiento de valores faltantes y depuración.
 
-prepare_data
-Selección y transformación de variables, normalización, codificación y división en entrenamiento y prueba.
+- prepare_data
+    Selección y transformación de variables, normalización, codificación y división en entrenamiento y prueba.
 
-train_model
-Entrenamiento supervisado, registro de experimentos con MLflow, evaluación comparativa y selección del modelo con mejor desempeño.
-El modelo final se registra en la Model Registry como IRAG_Lyapunov_Champion.
+- train_model
+    Entrenamiento supervisado, registro de experimentos con MLflow, evaluación comparativa y selección del modelo con mejor desempeño.
+    El modelo final se registra en la Model Registry como IRAG_Lyapunov_Champion.
 
-Ejecución del pipeline:
+- Ejecución del pipeline:
 
-dvc repro
+    dvc repro
 
 ## 5. Modelos Implementados
-Modelo Base: Logistic Regression
+- Modelo Base: Logistic Regression
 
-Se utiliza como referencia inicial para establecer una línea base interpretativa.
+    Se utiliza como referencia inicial para establecer una línea base interpretativa.
 
-Modelo Mejorado: Random Forest
+- Modelo Mejorado: Random Forest
 
-Presenta el mejor rendimiento en métricas globales y suele ser seleccionado como modelo final del proyecto.
+    Presenta el mejor rendimiento en métricas globales y suele ser seleccionado como modelo final del proyecto.
 
-Registro en MLflow
+- Registro en MLflow
 
-Se registran automáticamente hiperparámetros, métricas, artefactos y el modelo serializado.
-El modelo con mayor f1-score se registra bajo el nombre:
+    Se registran automáticamente hiperparámetros, métricas, artefactos y el modelo serializado.
+    El modelo con mayor f1-score se registra bajo el nombre:
 
-IRAG_Lyapunov_Champion
+    IRAG_Lyapunov_Champion
 
 ## 6. Reproducibilidad
-Versionamiento de datos
-dvc pull
+- Versionamiento de datos
+    dvc pull
 
-Ejecución completa del pipeline
-dvc repro
+- Ejecución completa del pipeline
+    dvc repro
 
-Interfaz de trazabilidad de modelos
-mlflow ui
+- Interfaz de trazabilidad de modelos
+    mlflow ui
 
-Instalación del entorno
-pip install -r requirements.txt
+- Instalación del entorno
+    pip install -r requirements.txt
 
 ## 7. Aplicación Streamlit
 
 El proyecto incluye una aplicación interactiva que permite realizar predicciones y visualizar información relevante del modelo seleccionado.
 
-Ejecución:
+- Ejecución:
 
-streamlit run app/streamlit_app.py
+    streamlit run app/streamlit_app.py
 
 ## 8. Consideraciones Metodológicas
 
@@ -101,34 +101,34 @@ Las decisiones de modelación, preprocesamiento y evaluación se justifican de a
 - La necesidad de estabilidad y trazabilidad en procesos experimentales.
 
 ## 9. Ejecución del Proyecto desde Cero
-git clone <URL_DEL_REPOSITORIO>
-cd proyecto-lyapunov
-pip install -r requirements.txt
-dvc pull
-dvc repro
-mlflow ui
+- git clone <https://github.com/ommoraa/proyecto-lyapunov.git>
+- cd proyecto-lyapunov
+- pip install -r requirements.txt
+- dvc pull
+- dvc repro
+- mlflow ui
 
 ## 10. Limitaciones
 
-Variabilidad dependiente del tamaño y consistencia del dataset.
+- Variabilidad dependiente del tamaño y consistencia del dataset.
 
-Posible sobreajuste del modelo Random Forest con conjuntos reducidos.
+- Posible sobreajuste del modelo Random Forest con conjuntos reducidos.
 
-Requiere mayor profundización para integración matemática completa con funciones de estabilidad tipo Lyapunov.
+- Requiere mayor profundización para integración matemática completa con funciones de estabilidad tipo Lyapunov.
 
 ## 11. Líneas Futuras de Trabajo
 
-Incorporación de técnicas de explicabilidad (SHAP).
+- Incorporación de técnicas de explicabilidad (SHAP).
 
-Evaluación de arquitecturas temporales (LSTM, Transformers).
+- Evaluación de arquitecturas temporales (LSTM, Transformers).
 
-Extensión del modelo hacia criterios continuos de estabilidad dinámica.
+- Extensión del modelo hacia criterios continuos de estabilidad dinámica.
 
-Despliegue en contenedores y automatización CI/CD.
+- Despliegue en contenedores y automatización CI/CD.
 
 ## 12. Licencia
 
-Proyecto con fines académicos y de investigación.
+    Proyecto con fines académicos y de investigación.
 
 ## 13. Aplicación Web (Streamlit)
 
