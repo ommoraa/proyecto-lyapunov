@@ -82,25 +82,33 @@ def compute_metrics(model, X_test, y_test):
     return metrics
 
 
-def log_run_to_mlflow(model, run_name: str, params: dict, metrics: dict):
+def log_run_to_mlflow(model, run_name: str, params: dict, metrics: dict) -> str:
     """
-    Registra un experimento en MLflow (parámetros, métricas y modelo).
+    Registra un experimento en MLflow (parámetros, métricas y modelo)
+    y devuelve el run_id para poder registrar el modelo campeón después.
     """
-    with mlflow.start_run(run_name=run_name):
+    with mlflow.start_run(run_name=run_name) as run:
+        # Parámetros
         for k, v in params.items():
             mlflow.log_param(k, v)
 
+        # Métricas
         for k, v in metrics.items():
             mlflow.log_metric(k, v)
 
+        # Modelo como artifact del run
         mlflow.sklearn.log_model(model, artifact_path="model")
-        print(f"[mlflow] Run '{run_name}' registrado.")
+
+        run_id = run.info.run_id
+        print(f"[mlflow] Run '{run_name}' registrado con run_id={run_id}")
+        return run_id
 
 
 def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
     """
     Entrena LogisticRegression (baseline) y RandomForest (modelo mejorado),
     registra ambos en MLflow y devuelve el modelo con mejor F1-score.
+    Además, registra el modelo campeón en la Model Registry de MLflow.
     """
     target_col = "target"
 
@@ -133,7 +141,12 @@ def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
     for k, v in logreg_metrics.items():
         print(f"{k:10s}: {v:.4f}")
 
-    log_run_to_mlflow(logreg, "logreg_baseline", logreg_params, logreg_metrics)
+    logreg_run_id = log_run_to_mlflow(
+        logreg,
+        "logreg_baseline",
+        logreg_params,
+        logreg_metrics,
+    )
 
     # =========================================
     # 2. Modelo mejorado: Random Forest
@@ -165,7 +178,12 @@ def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
     for k, v in rf_metrics.items():
         print(f"{k:10s}: {v:.4f}")
 
-    log_run_to_mlflow(rf, "random_forest_champion", rf_params, rf_metrics)
+    rf_run_id = log_run_to_mlflow(
+        rf,
+        "random_forest_champion",
+        rf_params,
+        rf_metrics,
+    )
 
     # ==================================================
     # Seleccionar modelo "campeón" usando F1-score
@@ -173,10 +191,31 @@ def train_and_log_models(train_df: pd.DataFrame, test_df: pd.DataFrame):
     f1_logreg = logreg_metrics["f1"]
     f1_rf = rf_metrics["f1"]
 
-    best_model = rf if f1_rf >= f1_logreg else logreg
-    best_name = "Random Forest" if best_model is rf else "Logistic Regression"
+    if f1_rf >= f1_logreg:
+        best_model = rf
+        best_name = "Random Forest"
+        champion_run_id = rf_run_id
+    else:
+        best_model = logreg
+        best_name = "Logistic Regression"
+        champion_run_id = logreg_run_id
 
     print(f"\n[train] Modelo seleccionado según F1-score: {best_name}")
+
+    # ==================================================
+    # Registrar el modelo campeón en la Model Registry
+    # ==================================================
+    try:
+        model_uri = f"runs:/{champion_run_id}/model"
+        registered_name = "IRAG_Lyapunov_Champion"
+        mlflow.register_model(model_uri=model_uri, name=registered_name)
+        print(
+            f"[mlflow] Modelo campeón registrado en la Model Registry como "
+            f"'{registered_name}' desde run_id={champion_run_id}"
+        )
+    except Exception as e:
+        # No detiene el entrenamiento si falla el registro; solo avisa.
+        print(f"[mlflow][WARN] No se pudo registrar el modelo campeón: {e}")
 
     return best_model
 
@@ -186,7 +225,6 @@ def main(train_path: str, test_path: str, model_output_path: str):
     Función principal para entrenar el modelo y guardar el artefacto final.
     """
     # Configurar MLflow (tracking local en la carpeta del proyecto)
-    # Si prefieres otra ruta, puedes ajustar el path.
     mlflow.set_tracking_uri("file:mlruns")
     mlflow.set_experiment("IRAG_Stability_Analyzer")
 
