@@ -141,5 +141,5 @@ Este proyecto fue elaborado por los autores y contó con asistencia de ChatGPT e
 Autores:
 - Arsenio Hidalgo Troya
 - Oscar Mauricio Mora Arroyo
-**Asigntura Ciencia de Datos para la Investigación Científica**
-**_Estudiantes del Doctorado en Ciencias Naturales y Matemáticas - UDENAR - 2025_**
+Asigntura Ciencia de Datos para la Investigación Científica
+_Estudiantes del Doctorado en Ciencias Naturales y Matemáticas - UDENAR - 2025_
