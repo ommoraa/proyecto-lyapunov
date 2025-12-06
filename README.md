@@ -135,6 +135,14 @@ Las decisiones de modelación, preprocesamiento y evaluación se justifican de a
 La implementación incluye una aplicación web construida en Streamlit, desplegada para acceso público en el enlace https://proyecto-lyapunov-ihomylr9mn3tyvnxvte779.streamlit.app/
     Esta herramienta permite interactuar con el modelo campeón registrado, generar predicciones a partir de nuevos datos, visualizar métricas de desempeño e interpretar resultados relevantes para el análisis de estabilidad epidemiológica. La aplicación constituye un componente fundamental para la transferencia de los resultados del proyecto, facilitando su uso por parte de investigadores, analistas y tomadores de decisión.
 
+## 14. Fuentes de Datos
+
+Los datos utilizados en este proyecto provienen del Portal de Datos Abiertos del Gobierno de Colombia, específicamente del conjunto oficial correspondiente a “Datos colectivos de infección respiratoria aguda (IRA/IRAG)”, administrado por el Ministerio de Salud y Protección Social.
+
+            Ministerio de Salud y Protección Social. (2024). Datos colectivos de infección 
+            respiratoria aguda (IRA/IRAG) [Conjunto de datos]. Portal de Datos Abiertos de Colombia. 
+            https://www.datos.gov.co/Salud-y-Protecci-n-Social/5-Datos-colectivos-de-infecci-n-respiratoria-aguda/dtct-ww7w/about_data
+
 ### Nota sobre la elaboración del proyecto
 Este proyecto fue elaborado por los autores y contó con asistencia de ChatGPT en la corrección, depuración, estandarización y adaptación del código Python, así como en la organización de notebooks, scripts, documentación técnica y estructuración del pipeline. La responsabilidad final sobre el diseño, decisiones metodológicas y contenido analítico es completamente de los autores.
 
